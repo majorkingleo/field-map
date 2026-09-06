@@ -182,3 +182,64 @@ controller.setOnChange((s) => {
   if (!unitInput.dataset.touched) unitInput.value = ui.unit;
   updateLegend();
 });
+
+// ---------------------------------------------------------------------------
+// Data-format guide modal: fetch DATA-FORMAT.md, offer HTML / Plain views and
+// a raw-file link.
+// ---------------------------------------------------------------------------
+
+import { marked } from 'marked';
+
+const modal = document.getElementById('helpModal')!;
+const content = document.getElementById('helpContent') as HTMLElement;
+const plain = document.getElementById('helpPlain') as HTMLPreElement;
+const tabHtml = document.getElementById('tabHtml') as HTMLButtonElement;
+const tabPlain = document.getElementById('tabPlain') as HTMLButtonElement;
+
+async function openHelp(): Promise<void> {
+  modal.classList.remove('hidden');
+  if (!content.dataset.loaded) {
+    try {
+      const res = await fetch('./DATA-FORMAT.md');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const md = await res.text();
+      content.innerHTML = await marked.parse(md);
+      plain.textContent = md;
+      content.dataset.loaded = '1';
+      // make in-doc links open in a new tab
+      content.querySelectorAll('a[href^="http"]').forEach((a) => {
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener');
+      });
+    } catch (err) {
+      content.innerHTML =
+        '<p>Could not load <code>DATA-FORMAT.md</code>. ' +
+        'Use the "Open raw" link to view the file directly.</p>';
+      void err;
+    }
+  }
+  showHelpTab('html');
+}
+
+function closeHelp(): void {
+  modal.classList.add('hidden');
+}
+
+function showHelpTab(which: 'html' | 'plain'): void {
+  const isHtml = which === 'html';
+  content.classList.toggle('hidden', !isHtml);
+  plain.classList.toggle('hidden', isHtml);
+  tabHtml.classList.toggle('active', isHtml);
+  tabPlain.classList.toggle('active', !isHtml);
+}
+
+document.getElementById('btnHelp')!.addEventListener('click', () => void openHelp());
+document.getElementById('btnCloseHelp')!.addEventListener('click', closeHelp);
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) closeHelp();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeHelp();
+});
+tabHtml.addEventListener('click', () => showHelpTab('html'));
+tabPlain.addEventListener('click', () => showHelpTab('plain'));

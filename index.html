@@ -22,6 +22,7 @@
           <button id="btnUpload" class="btn primary" type="button">⬆ Upload file</button>
           <input id="fileInput" type="file" accept=".txt,.dat,.csv,.fmap,.field,.tsv" hidden />
           <button id="btnDemo" class="btn ghost" type="button">Load demo dataset</button>
+          <button id="btnHelp" class="btn ghost" type="button">📖 Data format guide</button>
           <p class="hint">Drag &amp; drop a text file onto the canvas works too.</p>
           <div class="field">
             <label for="fieldType">Field type</label>
@@ -104,6 +105,25 @@
         <div id="readout" class="readout"></div>
       </main>
     </div>
+
+    <!-- Data format help modal -->
+    <div id="helpModal" class="modal hidden">
+      <div class="modalBox">
+        <div class="modalHead">
+          <h2>Data format</h2>
+          <span class="modalTabs">
+            <button id="tabHtml" class="tabBtn active" type="button">HTML</button>
+            <button id="tabPlain" class="tabBtn" type="button">Plain</button>
+            <a id="tabRaw" class="tabBtn rawLink" href="./DATA-FORMAT.md" target="_blank"
+              rel="noopener">Open raw ↗</a>
+          </span>
+          <button id="btnCloseHelp" class="btnClose" type="button" aria-label="Close">✕</button>
+        </div>
+        <div id="helpContent" class="helpContent markdown-body"></div>
+        <pre id="helpPlain" class="helpPlain hidden"></pre>
+      </div>
+    </div>
+
     <script type="module" src="./dist/app.js"></script>
   </body>
 </html>

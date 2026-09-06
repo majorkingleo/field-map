@@ -251,3 +251,168 @@ input[type="text"]:focus {
     max-height: 45vh;
   }
 }
+
+/* ---------- help modal ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 12, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  backdrop-filter: blur(3px);
+}
+.modal.hidden {
+  display: none;
+}
+.modalBox {
+  background: #0e1219;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: min(860px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.modalHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.modalHead h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.modalTabs {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.tabBtn {
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.tabBtn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.tabBtn.rawLink:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.btnClose {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  line-height: 1;
+}
+.btnClose:hover {
+  color: var(--text);
+}
+.helpContent {
+  overflow: auto;
+  padding: 8px 20px 20px;
+}
+.helpPlain {
+  overflow: auto;
+  margin: 0;
+  padding: 16px 20px 20px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: pre;
+  color: #cdd6e4;
+}
+.hidden {
+  display: none !important;
+}
+
+/* markdown body */
+.markdown-body {
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.markdown-body h1 {
+  font-size: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+.markdown-body h2 {
+  font-size: 16px;
+  margin-top: 22px;
+}
+.markdown-body h3 {
+  font-size: 14px;
+  margin-top: 18px;
+}
+.markdown-body code {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: #ffd9a0;
+}
+.markdown-body pre {
+  background: #0a0d13;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  overflow: auto;
+}
+.markdown-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #c8e6c9;
+}
+.markdown-body table {
+  border-collapse: collapse;
+  margin: 10px 0;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  text-align: left;
+}
+.markdown-body th {
+  background: var(--panel2);
+}
+.markdown-body a {
+  color: var(--accent);
+}
+.markdown-body blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 8px 0;
+  padding: 2px 12px;
+  color: var(--muted);
+}
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 22px;
+}
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
