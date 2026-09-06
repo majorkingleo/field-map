@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+
+# build output (generated; rebuild with `npm run build` on the server)
+dist/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# editors / OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# typescript
+*.tsbuildinfo

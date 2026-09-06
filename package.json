@@ -1,0 +1,17 @@
+{
+  "name": "field-map",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Web app: upload field data (electrical/magnetic), show as colored vector field map with zoom/pan.",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "watch": "vite build --watch",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0"
+  }
+}

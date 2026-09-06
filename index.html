@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Field Map Viewer</title>
+    <link rel="stylesheet" href="./dist/app.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="logo">⚛</div>
+          <div>
+            <h1>Field Map</h1>
+            <p>E‑field &middot; B‑field visualiser</p>
+          </div>
+        </div>
+
+        <section class="panel">
+          <h2>Data</h2>
+          <button id="btnUpload" class="btn primary" type="button">⬆ Upload file</button>
+          <input id="fileInput" type="file" accept=".txt,.dat,.csv,.fmap,.field,.tsv" hidden />
+          <button id="btnDemo" class="btn ghost" type="button">Load demo dataset</button>
+          <p class="hint">Drag &amp; drop a text file onto the canvas works too.</p>
+          <div class="field">
+            <label for="fieldType">Field type</label>
+            <select id="fieldType">
+              <option value="electric" selected>Electric (E)</option>
+              <option value="magnetic">Magnetic (B)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="unitInput">Unit</label>
+            <input id="unitInput" type="text" value="V/m" placeholder="V/m, T, a.u." />
+          </div>
+          <div id="dataTitle" class="dataTitle">Two negative point charges (demo)</div>
+          <div id="issues" class="issues"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Colouring</h2>
+          <div class="field">
+            <label for="colorMode">Show</label>
+            <select id="colorMode">
+              <option value="magnitude" selected>Field strength (magnitude)</option>
+              <option value="angle">Direction (angle)</option>
+            </select>
+          </div>
+          <div class="field" id="rowColormap">
+            <label for="colormap">Colour map</label>
+            <select id="colormap">
+              <option value="viridis" selected>viridis</option>
+              <option value="inferno">inferno</option>
+              <option value="magma">magma</option>
+              <option value="plasma">plasma</option>
+              <option value="cividis">cividis</option>
+              <option value="coolwarm">coolwarm</option>
+              <option value="gray">gray</option>
+            </select>
+          </div>
+          <div class="field" id="rowMagScale">
+            <label for="magScale">Magnitude scale</label>
+            <select id="magScale">
+              <option value="linear" selected>linear</option>
+              <option value="sqrt">sqrt</option>
+              <option value="log">log</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>View</h2>
+          <div class="checks">
+            <label><input type="checkbox" id="optArrows" checked /> arrows</label>
+            <label><input type="checkbox" id="optGrid" checked /> grid</label>
+            <label><input type="checkbox" id="optAxes" checked /> axes</label>
+            <label><input type="checkbox" id="optCharges" checked /> charges</label>
+          </div>
+          <div class="rowBtns">
+            <button id="btnFit" class="btn ghost" type="button">Fit view</button>
+            <button id="btnReset" class="btn ghost" type="button">Demo</button>
+          </div>
+          <p class="hint">Scroll = zoom &middot; drag = pan &middot; hover = inspect vector.</p>
+        </section>
+
+        <section class="panel legend">
+          <h2>Legend</h2>
+          <div id="colorbar">
+            <div id="colorbarGradient"></div>
+          </div>
+          <div class="colorbarLabels">
+            <span id="colorbarMin">0</span>
+            <span id="colorbarMax"></span>
+          </div>
+        </section>
+      </aside>
+
+      <main class="stage">
+        <div id="canvasWrap">
+          <canvas id="colorCanvas"></canvas>
+          <canvas id="overlayCanvas"></canvas>
+        </div>
+        <div id="readout" class="readout"></div>
+      </main>
+    </div>
+    <script type="module" src="./dist/app.js"></script>
+  </body>
+</html>

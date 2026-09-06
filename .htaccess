@@ -1,0 +1,23 @@
+# Block direct browser access to sensitive project files.
+# Uses FilesMatch + Require (no mod_rewrite, no Options) so it works under the
+# Apache user-dir override policy of this host without touching server config.
+#
+# Rules below match file *basenames* in this directory and all subdirectories.
+# They protect the single-owner dev files at the repo root (configs, lockfile,
+# this file). Private directories (specs/, src/, .git/, node_modules/) get
+# their own per-directory .htaccess that denies everything inside.
+
+# --- dotfiles & dev metadata ---------------------------------------------
+<FilesMatch "(^\.htaccess|^\.gitignore|^\.gitmodules|^\.env|^\.env\..*|^\.DS_Store)">
+  Require all denied
+</FilesMatch>
+
+# --- build/tool configs & manifests ---------------------------------------
+<FilesMatch "^(package\.json|package-lock\.json|tsconfig\.json|vite\.config\.ts|plan\.md)$">
+  Require all denied
+</FilesMatch>
+
+# --- any editor/backup/swap remnants ---------------------------------------
+<FilesMatch "\.(bak|swp|swo|orig|tmp|log)$|~$">
+  Require all denied
+</FilesMatch>
