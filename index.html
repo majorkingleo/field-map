@@ -30,9 +30,12 @@
           <h2>Data</h2>
           <button id="btnUpload" class="btn primary" type="button">⬆ Upload file(s)</button>
           <input id="fileInput" type="file" accept=".txt,.dat,.csv,.fmap,.field,.tsv" multiple hidden />
+          <button id="btnAddPoint" class="btn ghost" type="button">➕ Add point</button>
+          <input id="pointInput" type="file" accept=".txt,.dat,.csv,.fmap,.field,.tsv" hidden />
           <button id="btnDemo" class="btn ghost" type="button">Load demo dataset</button>
           <button id="btnHelp" class="btn ghost" type="button">📖 Data format guide</button>
-          <p class="hint">Drag &amp; drop one or more text files onto the canvas. Multiple files are merged into one field.</p>
+          <p class="hint">Upload one or more files. Each uploaded file becomes a removable point source; "Add point" appends an extra file to the current field.</p>
+          <div id="sourceList" class="sourceList"></div>
           <div class="field">
             <label for="fieldType">Field type</label>
             <select id="fieldType">

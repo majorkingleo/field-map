@@ -15,72 +15,148 @@ const controller = new FieldMapController(root);
 
 // --- demo / sample button ---
 document.getElementById('btnDemo')!.addEventListener('click', () => {
-  controller.loadDataset(demoDataset());
-  const title = document.getElementById('dataTitle');
-  if (title) title.textContent = 'Two negative point charges (demo)';
-  updateLegend();
+  sources = [];
+  rebuildFromSources();
 });
 
 // --- file upload ---
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+const pointInput = document.getElementById('pointInput') as HTMLInputElement;
 const fieldTypeSel = document.getElementById('fieldType') as HTMLSelectElement;
 const unitInput = document.getElementById('unitInput') as HTMLInputElement;
+const sourceListEl = document.getElementById('sourceList') as HTMLElement;
 
+interface Source {
+  name: string;
+  dataset: ReturnType<typeof parseFieldFileAuto>['dataset'];
+  count: number;
+  issues: string[];
+}
+
+// All uploaded point sources (each file = one removable source).
+let sources: Source[] = [];
+
+function currentUnit(): string {
+  const ftype = (fieldTypeSel.value as FieldType) || 'electric';
+  return unitInput.value.trim() || (ftype === 'electric' ? 'V/m' : 'T');
+}
+
+function currentFieldType(): FieldType {
+  return (fieldTypeSel.value as FieldType) || 'electric';
+}
+
+/** Merge all current sources, push them to the controller, refresh the UI. */
+function rebuildFromSources(): void {
+  const parts = sources.map((s) => s.dataset);
+  if (parts.length === 0) {
+    controller.loadDataset(demoDataset());
+    setTitleText('Two negative point charges (demo)');
+  } else {
+    const merged = mergeDatasets(parts, 'Uploaded data', currentFieldType(), currentUnit());
+    controller.loadDataset(merged);
+    controller.setOptions({ unit: currentUnit() });
+    setTitleText(
+      sources.length === 1
+        ? sources[0].name
+        : `${sources.length} point sources (${merged.regions[0]?.samples.length ?? 0} points)`,
+    );
+  }
+  renderSourceList();
+  renderIssues();
+  updateLegend();
+}
+
+function renderIssues(): void {
+  const errEl = document.getElementById('issues');
+  if (!errEl) return;
+  const withIssues = sources.filter((s) => s.issues.length > 0);
+  if (withIssues.length === 0) {
+    errEl.textContent = '';
+    return;
+  }
+  const first = withIssues[0];
+  errEl.textContent = `${first.name}: ${first.issues[0]} (${withIssues.length} source(s) with issues)`;
+}
+
+function setTitleText(text: string): void {
+  const el = document.getElementById('dataTitle');
+  if (el) el.textContent = text;
+}
+
+function renderSourceList(): void {
+  if (!sourceListEl) return;
+  sourceListEl.textContent = '';
+  if (sources.length === 0) return;
+  const heading = document.createElement('div');
+  heading.className = 'sourceListHeading';
+  heading.textContent = `Uploaded points (${sources.length})`;
+  sourceListEl.appendChild(heading);
+
+  for (let i = 0; i < sources.length; i++) {
+    const s = sources[i];
+    const item = document.createElement('div');
+    item.className = 'sourceItem';
+
+    const info = document.createElement('div');
+    info.className = 'sourceInfo';
+    const name = document.createElement('span');
+    name.className = 'sourceName';
+    name.textContent = s.name;
+    name.title = s.name;
+    const count = document.createElement('span');
+    count.className = 'sourceCount';
+    count.textContent = `${s.count} pts`;
+    info.appendChild(name);
+    info.appendChild(count);
+
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'sourceRemove';
+    rm.textContent = '\u00d7';
+    rm.title = 'Remove this point source';
+    rm.addEventListener('click', () => {
+      sources.splice(i, 1);
+      rebuildFromSources();
+    });
+
+    item.appendChild(info);
+    item.appendChild(rm);
+    sourceListEl.appendChild(item);
+  }
+}
+
+async function parseFile(file: File): Promise<Source | null> {
+  const text = await file.text();
+  const name = file.name.replace(/\.[^.]+$/, '');
+  const res = parseFieldFileAuto(text, name, currentFieldType(), currentUnit());
+  const count = res.dataset.regions.reduce((a, r) => a + r.samples.length, 0);
+  const issues = res.issues.map((i) => i.message);
+  return { name, dataset: res.dataset, count, issues };
+}
+
+/** Upload new files: append them as additional point sources. */
 async function onFiles(fileList: File[]): Promise<void> {
   const files = [...fileList].filter((f) => f.size > 0);
   if (files.length === 0) return;
 
-  const ftype = (fieldTypeSel.value as FieldType) || 'electric';
-  const unit = unitInput.value.trim() || (ftype === 'electric' ? 'V/m' : 'T');
-
-  const parts = [];
-  const allIssues: { file: string; message: string }[] = [];
-  let total = 0;
-
   for (const file of files) {
-    const text = await file.text();
-    const res = parseFieldFileAuto(text, file.name.replace(/\.[^.]+$/, ''), ftype, unit);
-    parts.push(res.dataset);
-    total += res.dataset.regions.reduce((a, r) => a + r.samples.length, 0);
-    for (const issue of res.issues) {
-      allIssues.push({ file: file.name, message: issue.message });
-    }
+    const src = await parseFile(file);
+    if (src) sources.push(src);
   }
-
-  const merged = mergeDatasets(
-    parts,
-    files.map((f) => f.name.replace(/\.[^.]+$/, '')).join(' + '),
-    ftype,
-    unit,
-  );
-  controller.loadDataset(merged);
-  controller.setOptions({ unit });
-
-  const title = document.getElementById('dataTitle');
-  if (title) {
-    title.textContent =
-      files.length > 1
-        ? `${files.length} files merged (${merged.regions[0]?.samples.length ?? 0} points)`
-        : merged.title;
-  }
-
-  const errEl = document.getElementById('issues');
-  if (errEl) {
-    errEl.textContent =
-      allIssues.length > 0
-        ? `${allIssues.length} line(s) skipped (${allIssues[0].file}: ${allIssues[0].message})`
-        : merged.regions[0]?.samples.length === 0
-          ? 'No valid data rows found. Check DATA-FORMAT.md.'
-          : '';
-  }
-  updateLegend();
+  rebuildFromSources();
 }
 
 document.getElementById('btnUpload')!.addEventListener('click', () => fileInput.click());
+document.getElementById('btnAddPoint')!.addEventListener('click', () => pointInput.click());
 fileInput.addEventListener('change', () => {
   const files = fileInput.files;
   if (files && files.length) void onFiles(Array.from(files));
   fileInput.value = '';
+});
+pointInput.addEventListener('change', () => {
+  const files = pointInput.files;
+  if (files && files.length) void onFiles(Array.from(files));
+  pointInput.value = '';
 });
 
 // drag & drop onto canvas area
@@ -143,10 +219,8 @@ document.getElementById('btnFit')!.addEventListener('click', () => {
   controller.fitView();
 });
 document.getElementById('btnReset')!.addEventListener('click', () => {
-  controller.loadDataset(demoDataset());
-  const title = document.getElementById('dataTitle');
-  if (title) title.textContent = 'Two negative point charges (demo)';
-  updateLegend();
+  sources = [];
+  rebuildFromSources();
 });
 
 // --- legend / colour bar ---
