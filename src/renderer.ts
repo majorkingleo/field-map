@@ -17,7 +17,7 @@
 // ---------------------------------------------------------------------------
 
 import type { ColorMode, ColormapKey, FieldDataset, MagScale, PointCharge } from './types';
-import { colorAtRGB, isLightTheme, lightenToTheme } from './colormaps';
+import { colorForTheme, isLightTheme } from './colormaps';
 import { scaleMag01 } from './dataset';
 import type { DatasetStats } from './dataset';
 
@@ -158,7 +158,7 @@ export function paintColorField(
       rgb = hslToRgb(deg);
     } else {
       const t = scaleMag01(avgT * maxMag, maxMag, opts.magScale);
-      rgb = lightenToTheme(colorAtRGB(opts.colormap, clamp01(t)), isLightTheme());
+      rgb = colorForTheme(opts.colormap, clamp01(t));
     }
     const o = i * 4;
     img.data[o] = rgb[0];
@@ -334,7 +334,7 @@ function drawArrows(
   // skip = decimation based on pixel density and lattice spacing
   const pxPerSampleX = lat.dx * view.scale;
   const pxPerSampleY = lat.dy * view.scale;
-  const targetArrowPx = 46; // desired spacing between arrows on screen
+  const targetArrowPx = 32; // desired spacing between arrows on screen
   const kx = Math.max(1, Math.round(targetArrowPx / Math.max(1, pxPerSampleX)));
   const ky = Math.max(1, Math.round(targetArrowPx / Math.max(1, pxPerSampleY)));
   const stepX = Math.max(1, Math.round(opts.arrowEvery * kx));
@@ -379,15 +379,16 @@ function drawArrows(
       const ang = Math.atan2(s.v, s.u);
       const dx = Math.cos(ang) * len;
       const dy = -Math.sin(ang) * len;
+      // Reference style: thin "ink" arrows over the heatmap. Direction mode
+      // keeps the cyclic hue; magnitude mode uses a single ink colour so the
+      // vectors read as flow lines over the coloured field, not palette blobs.
       const color =
         opts.colorMode === 'angle'
-          ? `hsl(${((((ang * 180) / Math.PI) % 360) + 360) % 360}, 95%, 55%)`
-          : rgbStr(
-              lightenToTheme(colorAtRGB(opts.colormap, clamp01(t01)), isLightTheme()),
-            );
+          ? `hsl(${((((ang * 180) / Math.PI) % 360) + 360) % 360}, 95%, 45%)`
+          : arrowInkColor();
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.moveTo(px, py);
       ctx.lineTo(px + dx, py + dy);
@@ -396,7 +397,7 @@ function drawArrows(
       const hx = px + dx;
       const hy = py + dy;
       const dirBack = Math.atan2(-dy, -dx); // pointing back toward tail
-      const ah = 4;
+      const ah = 3.4;
       ctx.beginPath();
       ctx.moveTo(hx, hy);
       ctx.lineTo(
@@ -413,8 +414,9 @@ function drawArrows(
   }
 }
 
-function rgbStr(rgb: [number, number, number]): string {
-  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+/** Ink colour for magnitude-mode arrows: dark on light, light on dark. */
+function arrowInkColor(): string {
+  return isLightTheme() ? 'rgba(20, 24, 36, 0.85)' : 'rgba(238, 242, 250, 0.92)';
 }
 
 function drawChargeMarkers(

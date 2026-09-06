@@ -1,7 +1,7 @@
 import { FieldMapController } from './app';
 import { demoDataset } from './demo';
 import { parseFieldFileAuto } from './parser';
-import { colorAtRGB, COLORMAP_KEYS, isLightTheme, lightenToTheme } from './colormaps';
+import { colorForTheme, COLORMAP_KEYS } from './colormaps';
 import type { FieldType } from './types';
 import './styles.css';
 
@@ -156,11 +156,10 @@ function updateLegend(): void {
   }
 }
 
-// Minimal palette ramp for the legend (mirrors colormaps.ts).
-// In light theme the ramp is lightened exactly like the field so plot + legend
-// always match.
+// Minimal palette ramp for the legend (mirrors colormaps.ts). The ramp uses
+// the same theme adaptation as the field so plot + legend always match.
 function rgbFromPalette(key: import('./types').ColormapKey, t: number): string {
-  const [r, g, b] = lightenToTheme(colorAtRGB(key, t), isLightTheme());
+  const [r, g, b] = colorForTheme(key, t);
   return `rgb(${r},${g},${b})`;
 }
 void COLORMAP_KEYS;

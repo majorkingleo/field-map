@@ -45,7 +45,7 @@ export function createState(): AppState {
       fieldType: 'electric',
       unit: 'V/m',
       colorMode: 'magnitude',
-      colormap: 'viridis',
+      colormap: 'heat',
       magScale: 'linear',
       showGrid: true,
       showAxes: true,

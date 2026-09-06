@@ -23,7 +23,8 @@ export type ColormapKey =
   | 'plasma'
   | 'cividis'
   | 'coolwarm'
-  | 'gray';
+  | 'gray'
+  | 'heat';
 
 /** A point charge / sink used as an overlay marker (electric field). */
 export interface PointCharge {

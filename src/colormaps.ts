@@ -39,6 +39,18 @@ const STOPS: Record<ColormapKey, RGB[]> = {
   gray: [
     [0, 0, 0], [255, 255, 255],
   ],
+  // Heatmap ramp sampled from the reference field map (yellow -> orange ->
+  // red -> dark purple). Reads well on both white and dark backgrounds.
+  heat: [
+    [253, 249, 0], // yellow      (low)
+    [248, 220, 8],
+    [248, 180, 8],
+    [248, 120, 8], // orange
+    [229, 0, 0],   // red
+    [165, 0, 32],  // deep red
+    [141, 14, 54], // dark magenta
+    [197, 26, 129],// purple      (high)
+  ],
 };
 
 export const COLORMAP_KEYS = Object.keys(STOPS) as ColormapKey[];
@@ -103,4 +115,20 @@ export function lightenToTheme(rgb: RGB, light: boolean, amount = 0.62): RGB {
     Math.round(rgb[1] + (255 - rgb[1]) * amount),
     Math.round(rgb[2] + (255 - rgb[2]) * amount),
   ];
+}
+
+// Palettes that are meant to sit on a white background as a true heatmap
+// (yellow -> red -> purple). These are never pastel-lightened in light mode;
+// their colours stay saturated exactly like the reference field map.
+const NO_LIGHTEN: ReadonlySet<ColormapKey> = new Set(['heat', 'gray']);
+
+/**
+ * Palette lookup with theme adaptation baked in. Use this instead of
+ * `lightenToTheme(colorAtRGB(...))` so heatmap palettes keep their full
+ * saturation on light backgrounds while the rest stay readable pastels.
+ */
+export function colorForTheme(key: ColormapKey, t01: number): RGB {
+  const rgb = colorAtRGB(key, t01);
+  if (NO_LIGHTEN.has(key)) return rgb;
+  return lightenToTheme(rgb, isLightTheme());
 }
