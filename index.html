@@ -28,11 +28,11 @@
 
         <section class="panel">
           <h2>Data</h2>
-          <button id="btnUpload" class="btn primary" type="button">⬆ Upload file</button>
-          <input id="fileInput" type="file" accept=".txt,.dat,.csv,.fmap,.field,.tsv" hidden />
+          <button id="btnUpload" class="btn primary" type="button">⬆ Upload file(s)</button>
+          <input id="fileInput" type="file" accept=".txt,.dat,.csv,.fmap,.field,.tsv" multiple hidden />
           <button id="btnDemo" class="btn ghost" type="button">Load demo dataset</button>
           <button id="btnHelp" class="btn ghost" type="button">📖 Data format guide</button>
-          <p class="hint">Drag &amp; drop a text file onto the canvas works too.</p>
+          <p class="hint">Drag &amp; drop one or more text files onto the canvas. Multiple files are merged into one field.</p>
           <div class="field">
             <label for="fieldType">Field type</label>
             <select id="fieldType">

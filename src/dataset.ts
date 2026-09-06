@@ -1,4 +1,4 @@
-import type { FieldDataset, MagScale } from './types';
+import type { FieldDataset, MagScale, Region, VectorSample } from './types';
 
 export interface Bounds {
   xmin: number;
@@ -71,4 +71,36 @@ export function inverseScale01(t01: number, max: number, scale: MagScale): numbe
   else if (scale === 'sqrt') n = t * t;
   else n = (Math.pow(10, t) - 1) / 9;
   return n * max;
+}
+
+/**
+ * Merge several datasets into one. Samples from all sources are combined into
+ * a single region (they are re-measured against the union of extents anyway);
+ * duplicate sample positions are replaced so a later file wins on overlap.
+ */
+export function mergeDatasets(
+  parts: FieldDataset[],
+  title: string,
+  fieldType: FieldDataset['fieldType'],
+  unit: string,
+): FieldDataset {
+  const byKey = new Map<string, VectorSample>();
+  const chargesByKey = new Map<string, FieldDataset['charges'][number]>();
+
+  for (const ds of parts) {
+    for (const region of ds.regions) {
+      for (const s of region.samples) {
+        byKey.set(`${s.x},${s.y}`, s);
+      }
+    }
+    for (const c of ds.charges) {
+      chargesByKey.set(`${c.x},${c.y}`, c);
+    }
+  }
+
+  const samples: VectorSample[] = [...byKey.values()];
+  const charges = [...chargesByKey.values()];
+  const region: Region = { name: 'merged', samples };
+
+  return { title, fieldType, unit, charges, regions: [region] };
 }

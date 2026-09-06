@@ -1,6 +1,7 @@
 import { FieldMapController } from './app';
 import { demoDataset } from './demo';
 import { parseFieldFileAuto } from './parser';
+import { mergeDatasets } from './dataset';
 import { colorForTheme, COLORMAP_KEYS } from './colormaps';
 import type { FieldType } from './types';
 import './styles.css';
@@ -25,23 +26,50 @@ const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const fieldTypeSel = document.getElementById('fieldType') as HTMLSelectElement;
 const unitInput = document.getElementById('unitInput') as HTMLInputElement;
 
-async function onFile(file: File): Promise<void> {
-  const text = await file.text();
+async function onFiles(fileList: File[]): Promise<void> {
+  const files = [...fileList].filter((f) => f.size > 0);
+  if (files.length === 0) return;
+
   const ftype = (fieldTypeSel.value as FieldType) || 'electric';
   const unit = unitInput.value.trim() || (ftype === 'electric' ? 'V/m' : 'T');
-  const res = parseFieldFileAuto(text, file.name.replace(/\.[^.]+$/, ''), ftype, unit);
-  controller.loadDataset(res.dataset);
+
+  const parts = [];
+  const allIssues: { file: string; message: string }[] = [];
+  let total = 0;
+
+  for (const file of files) {
+    const text = await file.text();
+    const res = parseFieldFileAuto(text, file.name.replace(/\.[^.]+$/, ''), ftype, unit);
+    parts.push(res.dataset);
+    total += res.dataset.regions.reduce((a, r) => a + r.samples.length, 0);
+    for (const issue of res.issues) {
+      allIssues.push({ file: file.name, message: issue.message });
+    }
+  }
+
+  const merged = mergeDatasets(
+    parts,
+    files.map((f) => f.name.replace(/\.[^.]+$/, '')).join(' + '),
+    ftype,
+    unit,
+  );
+  controller.loadDataset(merged);
   controller.setOptions({ unit });
+
   const title = document.getElementById('dataTitle');
-  if (title) title.textContent = res.dataset.title;
-  // report issues
+  if (title) {
+    title.textContent =
+      files.length > 1
+        ? `${files.length} files merged (${merged.regions[0]?.samples.length ?? 0} points)`
+        : merged.title;
+  }
+
   const errEl = document.getElementById('issues');
   if (errEl) {
-    const total = res.dataset.regions.reduce((a, r) => a + r.samples.length, 0);
     errEl.textContent =
-      res.issues.length > 0
-        ? `${res.issues.length} line(s) skipped: ${res.issues[0].message}`
-        : total === 0
+      allIssues.length > 0
+        ? `${allIssues.length} line(s) skipped (${allIssues[0].file}: ${allIssues[0].message})`
+        : merged.regions[0]?.samples.length === 0
           ? 'No valid data rows found. Check DATA-FORMAT.md.'
           : '';
   }
@@ -50,8 +78,9 @@ async function onFile(file: File): Promise<void> {
 
 document.getElementById('btnUpload')!.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => {
-  const f = fileInput.files?.[0];
-  if (f) void onFile(f);
+  const files = fileInput.files;
+  if (files && files.length) void onFiles(Array.from(files));
+  fileInput.value = '';
 });
 
 // drag & drop onto canvas area
@@ -64,8 +93,8 @@ dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover
 dropZone.addEventListener('drop', (e) => {
   e.preventDefault();
   dropZone.classList.remove('dragover');
-  const f = e.dataTransfer?.files?.[0];
-  if (f) void onFile(f);
+  const files = e.dataTransfer?.files;
+  if (files && files.length) void onFiles(Array.from(files));
 });
 
 // --- controls ---
