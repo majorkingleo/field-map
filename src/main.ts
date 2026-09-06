@@ -351,11 +351,82 @@ document.getElementById('btnCloseHelp')!.addEventListener('click', closeHelp);
 modal.addEventListener('click', (e) => {
   if (e.target === modal) closeHelp();
 });
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeHelp();
-});
 tabHtml.addEventListener('click', () => showHelpTab('html'));
 tabPlain.addEventListener('click', () => showHelpTab('plain'));
+
+// ---------------------------------------------------------------------------
+// About modal: README + LICENSE, fetched and rendered from markdown.
+// ---------------------------------------------------------------------------
+
+const aboutModal = document.getElementById('aboutModal')!;
+const aboutReadme = document.getElementById('aboutReadme') as HTMLElement;
+const aboutLicense = document.getElementById('aboutLicense') as HTMLPreElement;
+const aboutTabReadme = document.getElementById('aboutTabReadme') as HTMLButtonElement;
+const aboutTabLicense = document.getElementById('aboutTabLicense') as HTMLButtonElement;
+
+async function loadInto(el: HTMLElement, url: string, isPlain: boolean): Promise<void> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const md = await res.text();
+  if (isPlain) {
+    el.textContent = md;
+  } else {
+    el.innerHTML = await marked.parse(md);
+    el.querySelectorAll('a[href^="http"]').forEach((a) => {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener');
+    });
+  }
+}
+
+async function openAbout(): Promise<void> {
+  aboutModal.classList.remove('hidden');
+  if (!aboutReadme.dataset.loaded) {
+    try {
+      await Promise.all([
+        loadInto(aboutReadme, './README.md', false),
+        loadInto(aboutLicense, './LICENSE', true),
+      ]);
+      aboutReadme.dataset.loaded = '1';
+    } catch (err) {
+      aboutReadme.innerHTML =
+        '<p>Could not load <code>README.md</code> / <code>LICENSE</code>. ' +
+        'Use the raw links to view the files directly.</p>';
+      void err;
+    }
+  }
+  showAboutTab('readme');
+}
+
+function closeAbout(): void {
+  aboutModal.classList.add('hidden');
+}
+
+function showAboutTab(which: 'readme' | 'license'): void {
+  const isReadme = which === 'readme';
+  aboutReadme.classList.toggle('hidden', !isReadme);
+  aboutLicense.classList.toggle('hidden', isReadme);
+  aboutTabReadme.classList.toggle('active', isReadme);
+  aboutTabLicense.classList.toggle('active', !isReadme);
+}
+
+document.getElementById('btnAbout')!.addEventListener('click', () => void openAbout());
+document.getElementById('btnCloseAbout')!.addEventListener('click', closeAbout);
+aboutModal.addEventListener('click', (e) => {
+  if (e.target === aboutModal) closeAbout();
+});
+aboutTabReadme.addEventListener('click', () => showAboutTab('readme'));
+aboutTabLicense.addEventListener('click', () => showAboutTab('license'));
+
+// A single Escape closes whichever modal is open.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const anyOpen = [modal, aboutModal].some((m) => !m.classList.contains('hidden'));
+  if (anyOpen) {
+    closeHelp();
+    closeAbout();
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Theme switch (dark / light). Persisted in localStorage; the inline script in

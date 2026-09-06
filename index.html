@@ -34,6 +34,7 @@
           <input id="pointInput" type="file" accept=".txt,.dat,.csv,.fmap,.field,.tsv" hidden />
           <button id="btnDemo" class="btn ghost" type="button">Load demo dataset</button>
           <button id="btnHelp" class="btn ghost" type="button">📖 Data format guide</button>
+          <button id="btnAbout" class="btn ghost" type="button">ℹ️ About</button>
           <p class="hint">Upload one or more files. Each uploaded file becomes a removable point source; "Add point" appends an extra file to the current field.</p>
           <div id="sourceList" class="sourceList"></div>
           <div class="field">
@@ -147,6 +148,24 @@
         </div>
         <div id="helpContent" class="helpContent markdown-body"></div>
         <pre id="helpPlain" class="helpPlain hidden"></pre>
+      </div>
+    </div>
+
+    <!-- About modal: README + LICENSE rendered from markdown -->
+    <div id="aboutModal" class="modal hidden">
+      <div class="modalBox">
+        <div class="modalHead">
+          <h2>About</h2>
+          <span class="modalTabs">
+            <button id="aboutTabReadme" class="tabBtn active" type="button">README</button>
+            <button id="aboutTabLicense" class="tabBtn" type="button">License</button>
+            <a class="tabBtn rawLink" href="./LICENSE" target="_blank" rel="noopener">License raw ↗</a>
+            <a class="tabBtn rawLink" href="./README.md" target="_blank" rel="noopener">README raw ↗</a>
+          </span>
+          <button id="btnCloseAbout" class="btnClose" type="button" aria-label="Close">✕</button>
+        </div>
+        <div id="aboutReadme" class="helpContent markdown-body"></div>
+        <pre id="aboutLicense" class="helpPlain hidden"></pre>
       </div>
     </div>
 
