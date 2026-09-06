@@ -88,9 +88,97 @@ export interface RasterOptions {
   magScale: MagScale;
 }
 
+interface GridData {
+  xs: number[];
+  ys: number[];
+  dx: number;
+  dy: number;
+  nx: number;
+  ny: number;
+  byKey: Map<string, { u: number; v: number; valid: boolean }>;
+}
+
+/**
+ * When the samples form a complete, evenly spaced lattice, return a dense
+ * index over it; otherwise null. A regular grid lets us draw the field as a
+ * smooth continuous background instead of one coloured block per sample.
+ */
+function buildRegularGrid(ds: FieldDataset): GridData | null {
+  const lat = latticeOf(ds);
+  if (!lat) return null;
+  const { xs, ys } = lat;
+  const nx = xs.length;
+  const ny = ys.length;
+  if (nx < 2 || ny < 2) return null;
+  const dx = (xs[nx - 1] - xs[0]) / (nx - 1);
+  const dy = (ys[ny - 1] - ys[0]) / (ny - 1);
+  if (!(dx > 0) || !(dy > 0)) return null;
+  const epsX = Math.max(1e-9, Math.abs(dx) * 1e-6);
+  const epsY = Math.max(1e-9, Math.abs(dy) * 1e-6);
+  for (let i = 0; i < nx; i++) if (Math.abs(xs[i] - (xs[0] + i * dx)) > epsX) return null;
+  for (let j = 0; j < ny; j++) if (Math.abs(ys[j] - (ys[0] + j * dy)) > epsY) return null;
+
+  const byKey = new Map<string, { u: number; v: number; valid: boolean }>();
+  for (const region of ds.regions) {
+    for (const s of region.samples) {
+      const fx = (s.x - xs[0]) / dx;
+      const fy = (s.y - ys[0]) / dy;
+      const ix = Math.round(fx);
+      const jy = Math.round(fy);
+      if (Math.abs(fx - ix) > 1e-6 || Math.abs(fy - jy) > 1e-6) return null;
+      if (ix < 0 || ix >= nx || jy < 0 || jy >= ny) continue;
+      byKey.set(`${ix},${jy}`, { u: s.u, v: s.v, valid: s.valid });
+    }
+  }
+  return { xs, ys, dx, dy, nx, ny, byKey };
+}
+
+/**
+ * Bilinear interpolation of (u, v) at world position (wx, wy) over a regular
+ * grid. Masked (invalid) or missing corners are skipped and the remaining
+ * weights renormalised, so charge holes stay local without smearing. Returns
+ * null outside the grid rectangle.
+ */
+function interpGrid(
+  grid: GridData,
+  wx: number,
+  wy: number,
+): [number, number] | null {
+  const fx = (wx - grid.xs[0]) / grid.dx;
+  const fy = (wy - grid.ys[0]) / grid.dy;
+  const i0 = Math.floor(fx);
+  const j0 = Math.floor(fy);
+  if (i0 < -1 || i0 > grid.nx - 1 || j0 < -1 || j0 > grid.ny - 1) return null;
+
+  let su = 0;
+  let sv = 0;
+  let sw = 0;
+  for (let dj = 0; dj <= 1; dj++) {
+    const jj = j0 + dj;
+    if (jj < 0 || jj >= grid.ny) continue;
+    for (let di = 0; di <= 1; di++) {
+      const ii = i0 + di;
+      if (ii < 0 || ii >= grid.nx) continue;
+      const s = grid.byKey.get(`${ii},${jj}`);
+      if (!s || !s.valid) continue;
+      const w = (1 - Math.abs(fx - ii)) * (1 - Math.abs(fy - jj));
+      if (w <= 0) continue;
+      su += s.u * w;
+      sv += s.v * w;
+      sw += w;
+    }
+  }
+  if (sw <= 0) return null;
+  return [su / sw, sv / sw];
+}
+
 /**
  * Paint the colour field into a canvas sized cssW x cssH (device px) for the
  * current view. `cellTarget` is the desired on-screen cell size in device px.
+ *
+ * Regular grids are drawn as a smooth, continuous background (bilinear
+ * interpolation of the field values); irregular point sets fall back to the
+ * blocky nearest-sample cells.
  */
 export function paintColorField(
   canvas: HTMLCanvasElement,
@@ -112,6 +200,66 @@ export function paintColorField(
   ctx.fillRect(0, 0, W, H);
 
   if (regions.length === 0 || stats.validCount === 0) return;
+
+  const grid = buildRegularGrid(ds);
+
+  // ------------------------------------------------------------------
+  // Smooth path: continuous background from a regular lattice.
+  // ------------------------------------------------------------------
+  if (grid) {
+    const ncx = Math.max(1, Math.min(1600, Math.ceil(W / cellTarget)));
+    const ncy = Math.max(1, Math.min(1600, Math.ceil(H / cellTarget)));
+    const img = ctx.createImageData(ncx, ncy);
+    const maxMag = stats.maxMag || 1;
+
+    for (let cy = 0; cy < ncy; cy++) {
+      // sample at the CENTRE of each cell for a stable gradient
+      const py = (cy + 0.5) * (H / ncy);
+      const wy = (view.originY - py) / view.scale;
+      for (let cx = 0; cx < ncx; cx++) {
+        const px = (cx + 0.5) * (W / ncx);
+        const wx = (px - view.originX) / view.scale;
+        const f = interpGrid(grid, wx, wy);
+        const o = (cy * ncx + cx) * 4;
+        if (!f) {
+          img.data[o + 3] = 0;
+          continue;
+        }
+        const [u, v] = f;
+        const mag = Math.hypot(u, v);
+        let rgb: [number, number, number];
+        if (opts.colorMode === 'angle') {
+          const deg = (Math.atan2(v, u) * 180) / Math.PI;
+          rgb = hslToRgb(deg);
+        } else {
+          const t = scaleMag01(mag, maxMag, opts.magScale);
+          rgb = colorForTheme(opts.colormap, clamp01(t));
+        }
+        img.data[o] = rgb[0];
+        img.data[o + 1] = rgb[1];
+        img.data[o + 2] = rgb[2];
+        img.data[o + 3] = 255;
+      }
+    }
+
+    const tmp = document.createElement('canvas');
+    tmp.width = ncx;
+    tmp.height = ncy;
+    const tctx = tmp.getContext('2d');
+    if (!tctx) return;
+    tctx.putImageData(img, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = canvasBackground();
+    ctx.fillRect(0, 0, W, H);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(tmp, 0, 0, ncx, ncy, 0, 0, W, H);
+    return;
+  }
+
+  // ------------------------------------------------------------------
+  // Fallback: irregular point set -> blocky nearest-sample cells.
+  // ------------------------------------------------------------------
 
   // We work in a low-res buffer, one colour cell per target screen cell.
   // Cells outside the sample bounding box stay transparent (show background).
