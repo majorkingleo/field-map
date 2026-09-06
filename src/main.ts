@@ -1,7 +1,7 @@
 import { FieldMapController } from './app';
 import { demoDataset } from './demo';
 import { parseFieldFile } from './parser';
-import { colorAtRGB, COLORMAP_KEYS } from './colormaps';
+import { colorAtRGB, COLORMAP_KEYS, isLightTheme, lightenToTheme } from './colormaps';
 import type { FieldType } from './types';
 import './styles.css';
 
@@ -157,8 +157,10 @@ function updateLegend(): void {
 }
 
 // Minimal palette ramp for the legend (mirrors colormaps.ts).
+// In light theme the ramp is lightened exactly like the field so plot + legend
+// always match.
 function rgbFromPalette(key: import('./types').ColormapKey, t: number): string {
-  const [r, g, b] = colorAtRGB(key, t);
+  const [r, g, b] = lightenToTheme(colorAtRGB(key, t), isLightTheme());
   return `rgb(${r},${g},${b})`;
 }
 void COLORMAP_KEYS;
@@ -243,3 +245,35 @@ document.addEventListener('keydown', (e) => {
 });
 tabHtml.addEventListener('click', () => showHelpTab('html'));
 tabPlain.addEventListener('click', () => showHelpTab('plain'));
+
+// ---------------------------------------------------------------------------
+// Theme switch (dark / light). Persisted in localStorage; the inline script in
+// index.html applies the saved value before first paint.
+// ---------------------------------------------------------------------------
+
+type Theme = 'dark' | 'light';
+
+const darkBtn = document.getElementById('themeDark') as HTMLButtonElement;
+const lightBtn = document.getElementById('themeLight') as HTMLButtonElement;
+
+function currentTheme(): Theme {
+  const a = document.documentElement.getAttribute('data-theme');
+  return a === 'light' ? 'light' : 'dark';
+}
+
+function applyTheme(theme: Theme): void {
+  document.documentElement.setAttribute('data-theme', theme);
+  darkBtn.classList.toggle('active', theme === 'dark');
+  lightBtn.classList.toggle('active', theme === 'light');
+  try {
+    localStorage.setItem('fieldmap-theme', theme);
+  } catch {
+    /* private mode: ignore */
+  }
+  controller.redraw();
+  updateLegend();
+}
+
+darkBtn.addEventListener('click', () => applyTheme('dark'));
+lightBtn.addEventListener('click', () => applyTheme('light'));
+applyTheme(currentTheme());

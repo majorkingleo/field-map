@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Field Map Viewer</title>
     <link rel="stylesheet" href="./dist/app.css" />
+    <script>
+      // apply saved theme before first paint to avoid a flash
+      (function () {
+        try {
+          var t = localStorage.getItem('fieldmap-theme') || 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app">
@@ -84,7 +93,13 @@
           </div>
           <p class="hint">Scroll = zoom &middot; drag = pan &middot; hover = inspect vector.</p>
         </section>
-
+        <section class="panel">
+          <h2>Theme</h2>
+          <div class="themeToggle" role="group" aria-label="Colour theme">
+            <button id="themeDark" class="themeBtn" type="button" data-theme-val="dark">🌙 Dark</button>
+            <button id="themeLight" class="themeBtn" type="button" data-theme-val="light">☀️ Light</button>
+          </div>
+        </section>
         <section class="panel legend">
           <h2>Legend</h2>
           <div id="colorbar">

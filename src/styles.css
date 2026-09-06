@@ -7,6 +7,50 @@
   --muted: #8b96ad;
   --accent: #4c8dff;
   --accent2: #7c5cff;
+
+  /* canvas + overlay colours (see renderer.ts for the JS mirrors) */
+  --canvas-bg: #11141d;
+  --grid-line: rgba(255, 255, 255, 0.09);
+  --axis-line: rgba(255, 255, 255, 0.55);
+
+  /* surfaces used by modal / code blocks / readout */
+  --overlay-scrim: rgba(5, 7, 12, 0.7);
+  --modal-bg: #0e1219;
+  --pre-bg: #0a0d13;
+  --readout-bg: rgba(10, 13, 20, 0.82);
+  --code-text: #ffd9a0;
+  --code-text2: #c8e6c9;
+  --pre-text: #cdd6e4;
+  --issue: #ffb4a2;
+  --btn-hover-filter: brightness(1.1);
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- light theme ---------- */
+html[data-theme="light"] {
+  --bg: #eef1f6;
+  --panel: #ffffff;
+  --panel2: #f4f6fb;
+  --border: #d6dbe6;
+  --text: #1c2333;
+  --muted: #5b667c;
+  --accent: #2f6fe0;
+  --accent2: #7c3aed;
+
+  --canvas-bg: #eef2f7;
+  --grid-line: rgba(20, 30, 60, 0.1);
+  --axis-line: rgba(20, 30, 60, 0.6);
+
+  --overlay-scrim: rgba(30, 35, 48, 0.35);
+  --modal-bg: #ffffff;
+  --pre-bg: #f0f2f7;
+  --readout-bg: rgba(255, 255, 255, 0.9);
+  --code-text: #9a4d00;
+  --code-text2: #1a6b2c;
+  --pre-text: #20293c;
+  --issue: #c62828;
+  --btn-hover-filter: brightness(0.97);
+  --shadow: rgba(20, 30, 60, 0.25);
 }
 
 * {
@@ -118,7 +162,7 @@ input[type="text"]:focus {
   transition: filter 0.15s;
 }
 .btn:hover {
-  filter: brightness(1.1);
+  filter: var(--btn-hover-filter);
 }
 .btn.primary {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -147,7 +191,7 @@ input[type="text"]:focus {
   word-break: break-word;
 }
 .issues {
-  color: #ffb4a2;
+  color: var(--issue);
   font-size: 11.5px;
   margin-top: 6px;
   min-height: 14px;
@@ -174,6 +218,29 @@ input[type="text"]:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+/* ---------- theme toggle ---------- */
+.themeToggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.themeBtn {
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.themeBtn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
 }
 
 /* ---------- legend ---------- */
@@ -228,7 +295,7 @@ input[type="text"]:focus {
   position: absolute;
   left: 10px;
   bottom: 10px;
-  background: rgba(10, 13, 20, 0.82);
+  background: var(--readout-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 6px 10px;
@@ -240,8 +307,7 @@ input[type="text"]:focus {
   backdrop-filter: blur(4px);
 }
 
-@media (max-width: 760px) {
-  #app {
+@media (max-width: 760px) {  #app {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
   }
@@ -256,7 +322,7 @@ input[type="text"]:focus {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(5, 7, 12, 0.7);
+  background: var(--overlay-scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -268,14 +334,14 @@ input[type="text"]:focus {
   display: none;
 }
 .modalBox {
-  background: #0e1219;
+  background: var(--modal-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
   width: min(860px, 100%);
   max-height: 88vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px var(--shadow);
 }
 .modalHead {
   display: flex;
@@ -338,7 +404,7 @@ input[type="text"]:focus {
   font-size: 12.5px;
   line-height: 1.5;
   white-space: pre;
-  color: #cdd6e4;
+  color: var(--pre-text);
 }
 .hidden {
   display: none !important;
@@ -370,10 +436,10 @@ input[type="text"]:focus {
   padding: 1px 5px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 12px;
-  color: #ffd9a0;
+  color: var(--code-text);
 }
 .markdown-body pre {
-  background: #0a0d13;
+  background: var(--pre-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
@@ -383,7 +449,7 @@ input[type="text"]:focus {
   background: none;
   border: none;
   padding: 0;
-  color: #c8e6c9;
+  color: var(--code-text2);
 }
 .markdown-body table {
   border-collapse: collapse;

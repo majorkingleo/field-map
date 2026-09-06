@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { computeStats } from './dataset';
-import { paintColorField, drawOverlay, nearestSample } from './renderer';
+import { paintColorField, drawOverlay, nearestSample, canvasBackground } from './renderer';
 import { createState, zoomAt, panBy, replaceDataset, updateOptions } from './state';
 import type { AppOptions } from './state';
 import type { ViewTransform } from './renderer';
@@ -105,9 +105,15 @@ export class FieldMapController {
 
   private paintBackgroundOnly(): void {
     if (!this.colorCtx) return;
-    this.colorCtx.fillStyle = '#11141d';
+    this.colorCtx.fillStyle = canvasBackground();
     this.colorCtx.fillRect(0, 0, this.colorCanvas.width, this.colorCanvas.height);
     this.overlayCtx?.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+  }
+
+  /** Redraw the whole canvas stack (used after a theme switch). */
+  redraw(): void {
+    this.colorDirty = true;
+    this.requestRender();
   }
 
   // ----- input ------------------------------------------------------------

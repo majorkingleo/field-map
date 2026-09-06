@@ -77,3 +77,30 @@ export function angleColor(deg: number): string {
   const h = ((deg + 180) % 360 + 360) % 360;
   return `hsl(${h.toFixed(0)}, 95%, 55%)`;
 }
+
+// ---------------------------------------------------------------------------
+// Theme adaptation for the field colours.
+//
+// Dark theme: palettes are used as-is (their low end is very dark, ideal on a
+// dark canvas). Light theme: colours are blended toward white so the field
+// stays readable as a soft pastel ramp instead of a black blob on a white
+// background. The legend bar applies the same blend so plot and legend always
+// match.
+// ---------------------------------------------------------------------------
+
+export function isLightTheme(): boolean {
+  return (
+    typeof document !== 'undefined' &&
+    document.documentElement.getAttribute('data-theme') === 'light'
+  );
+}
+
+/** Blend a palette colour toward white by `amount` in [0,1]. */
+export function lightenToTheme(rgb: RGB, light: boolean, amount = 0.62): RGB {
+  if (!light) return rgb;
+  return [
+    Math.round(rgb[0] + (255 - rgb[0]) * amount),
+    Math.round(rgb[1] + (255 - rgb[1]) * amount),
+    Math.round(rgb[2] + (255 - rgb[2]) * amount),
+  ];
+}

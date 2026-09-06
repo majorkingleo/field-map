@@ -17,7 +17,7 @@
 // ---------------------------------------------------------------------------
 
 import type { ColorMode, ColormapKey, FieldDataset, MagScale, PointCharge } from './types';
-import { colorAtRGB } from './colormaps';
+import { colorAtRGB, isLightTheme, lightenToTheme } from './colormaps';
 import { scaleMag01 } from './dataset';
 import type { DatasetStats } from './dataset';
 
@@ -29,6 +29,25 @@ export interface ViewTransform {
 
 function clamp01(t: number): number {
   return t < 0 ? 0 : t > 1 ? 1 : t;
+}
+
+// Theme colours come from the CSS custom properties so canvas and DOM stay in
+// sync when the user switches dark/light. Fallbacks match the dark theme.
+function cssVar(name: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback;
+  const cs = getComputedStyle(document.documentElement);
+  const v = cs.getPropertyValue(name).trim();
+  return v.length > 0 ? v : fallback;
+}
+
+export function canvasBackground(): string {
+  return cssVar('--canvas-bg', '#11141d');
+}
+function gridLineColor(): string {
+  return cssVar('--grid-line', 'rgba(255,255,255,0.09)');
+}
+function axisLineColor(): string {
+  return cssVar('--axis-line', 'rgba(255,255,255,0.55)');
 }
 
 function px2worldX(px: number, v: ViewTransform): number {
@@ -89,7 +108,7 @@ export function paintColorField(
   const regions = ds.regions.filter((r) => r.samples.length > 0);
 
   // Background for empty area.
-  ctx.fillStyle = '#11141d';
+  ctx.fillStyle = canvasBackground();
   ctx.fillRect(0, 0, W, H);
 
   if (regions.length === 0 || stats.validCount === 0) return;
@@ -139,7 +158,7 @@ export function paintColorField(
       rgb = hslToRgb(deg);
     } else {
       const t = scaleMag01(avgT * maxMag, maxMag, opts.magScale);
-      rgb = colorAtRGB(opts.colormap, clamp01(t));
+      rgb = lightenToTheme(colorAtRGB(opts.colormap, clamp01(t)), isLightTheme());
     }
     const o = i * 4;
     img.data[o] = rgb[0];
@@ -157,7 +176,7 @@ export function paintColorField(
   if (!tctx) return;
   tctx.putImageData(img, 0, 0);
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#11141d';
+  ctx.fillStyle = canvasBackground();
   ctx.fillRect(0, 0, W, H);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(tmp, 0, 0, ncx, ncy, 0, 0, W, H);
@@ -257,7 +276,7 @@ function drawGridAndAxes(
   H: number,
 ): void {
   if (opts.grid) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = gridLineColor();
     ctx.lineWidth = 1;
     const step = niceStep(70 / view.scale);
     const vp = viewport(view, W, H);
@@ -275,7 +294,7 @@ function drawGridAndAxes(
     ctx.stroke();
   }
   if (opts.axes) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.strokeStyle = axisLineColor();
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     const ay = Math.round(view.originY) + 0.5;
@@ -363,7 +382,9 @@ function drawArrows(
       const color =
         opts.colorMode === 'angle'
           ? `hsl(${((((ang * 180) / Math.PI) % 360) + 360) % 360}, 95%, 55%)`
-          : rgbStr(colorAtRGB(opts.colormap, clamp01(t01)));
+          : rgbStr(
+              lightenToTheme(colorAtRGB(opts.colormap, clamp01(t01)), isLightTheme()),
+            );
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
       ctx.lineWidth = 1.6;
