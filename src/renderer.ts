@@ -533,7 +533,7 @@ function drawArrows(
       const color =
         opts.colorMode === 'angle'
           ? `hsl(${((((ang * 180) / Math.PI) % 360) + 360) % 360}, 95%, 45%)`
-          : arrowInkColor();
+          : arrowInkColor(opts.colormap);
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
       ctx.lineWidth = 1.2;
@@ -562,9 +562,18 @@ function drawArrows(
   }
 }
 
-/** Ink colour for magnitude-mode arrows: dark on light, light on dark. */
-function arrowInkColor(): string {
-  return isLightTheme() ? 'rgba(20, 24, 36, 0.85)' : 'rgba(238, 242, 250, 0.92)';
+/**
+ * Ink colour for magnitude-mode arrows.
+ *
+ * The `heat` map is a bright yellow->orange->red ramp, so in dark mode its
+ * arrows must be black to stay visible. The other scientific palettes are
+ * dark-bodied on a dark canvas, so they keep light arrows in dark mode.
+ * Light mode always uses dark ink (soft black), matching the reference look.
+ */
+function arrowInkColor(colormap: ColormapKey): string {
+  if (isLightTheme()) return 'rgba(20, 24, 36, 0.85)';
+  if (colormap === 'heat') return 'rgba(0, 0, 0, 0.9)';
+  return 'rgba(238, 242, 250, 0.92)';
 }
 
 function drawChargeMarkers(
