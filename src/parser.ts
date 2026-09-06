@@ -1,7 +1,8 @@
 // ---------------------------------------------------------------------------
-// Text parser for uploaded field data.
+// Text parsers for uploaded field data. The app supports several layouts and
+// auto-detects the one the uploaded file uses (see parseFieldFileAuto).
 //
-// Two table formats are supported (see DATA-FORMAT.md):
+// Layout A (column table, documented in DATA-FORMAT.md):
 //
 //   Form 1  cartesian columns     x  y  u  v
 //   Form 2  polar columns         x  y  mag  deg
@@ -16,7 +17,10 @@
 //   - blank lines are ignored
 //   - a magnitude of -999.0 (or <= -999) marks a masked / singular point
 //
-// Example:
+// Layout B (two-row polar grid, the original email examples, e.g.
+// specs/example1.txt and the GMX HTML mails). See parseExample1.ts.
+//
+// Example (Layout A):
 //   # E-field, two negative point charges
 //   x  y  mag  deg
 //   10  10  0.011  -135
@@ -24,6 +28,7 @@
 // ---------------------------------------------------------------------------
 
 import type { FieldDataset, FieldType, Region, VectorSample } from './types';
+import { parseExample1Text } from './parseExample1';
 
 function cleanLine(line: string): string {
   return line.split('#')[0].trim();
@@ -90,12 +95,14 @@ export function parseFieldFile(
     if (line.length === 0 || asComment(line)) continue;
 
     const nums = parseNumbers(line);
-    if (nums.length === 0) continue;
 
     if (!headerSeen) {
+      // Decide whether this is a header row that names the columns.
       const firstTok = (line.split(/\s+/).find((t) => t.length > 0) ?? '').replace(/,/g, '.');
       const firstIsNumber = Number.isFinite(Number(firstTok));
-      if (!firstIsNumber && nums.length >= 2) {
+      if (!firstIsNumber) {
+        // A header row: even when it contains no numbers at all (e.g.
+        // "x y mag deg") it selects the polar layout, so look at the words.
         polar = detectPolar(line);
         headerSeen = true;
         continue;
@@ -103,6 +110,7 @@ export function parseFieldFile(
       headerSeen = true; // no header line; treat this as data
     }
 
+    if (nums.length === 0) continue;
     if (nums.length < 4) {
       issues.push({ line: i + 1, message: 'Line has fewer than 4 columns, skipped.' });
       continue;
@@ -149,4 +157,46 @@ export function parseFieldFile(
     dataset: { title, fieldType, unit, charges: [], regions: [region] },
     issues,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Format auto-detection.
+// ---------------------------------------------------------------------------
+
+/**
+ * Heuristic: does this file use the legacy two-row polar grid layout
+ * (angle row + magnitude row per horizontal grid line)?
+ *
+ * Signals:
+ *   - a line containing the literal "winkel in grad" (direction row) and
+ *     another line containing "Feldstärke" / "feldstaerke" (magnitude row),
+ *   - an x-column header line like "x=-10.0 x=-9.5 ... x= 0.0  Spalte x".
+ */
+function looksLikeTwoRowGrid(text: string): boolean {
+  const hasAngleRow = /winkel\s+in\s+grad/i.test(text);
+  const hasMagRow = /feldst/i.test(text);
+  const hasXHeader = /x\s*=\s*[-+]?\d/.test(text) && /spalte\s*x/i.test(text);
+  // Require strong evidence to avoid mis-routing a plain column table that
+  // happens to mention a German label in a comment.
+  return (hasAngleRow || (hasMagRow && hasXHeader)) && /winkel|grad/i.test(text);
+}
+
+/**
+ * Parse uploaded field data with automatic format detection.
+ *
+ * Returns issues from whichever parser handled the file. When the file looks
+ * like the legacy two-row polar grid (original email examples) the dedicated
+ * parser is used, otherwise the column-table parser (Layout A) handles it.
+ */
+export function parseFieldFileAuto(
+  text: string,
+  title: string,
+  fieldType: FieldType,
+  unit: string,
+): ParseResult {
+  if (looksLikeTwoRowGrid(text)) {
+    const legacy = parseExample1Text(text, title, fieldType, unit);
+    if (legacy) return legacy;
+  }
+  return parseFieldFile(text, title, fieldType, unit);
 }

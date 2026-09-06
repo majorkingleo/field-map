@@ -31,10 +31,9 @@ fields. User story derived from the specs:
 > coloured map with vector arrows. I can zoom and pan, switch between
 > magnitude and direction colouring, and hover to read exact values.
 
-Out of scope for the first version: the legacy two-row text tables themselves
-(the angle row follows the magnitude row). The specs only *describe* that
-format; the page instead documents and accepts a clean table format (see
-`DATA-FORMAT.md`), and ships the same two-negative-charges field as a demo.
+The viewer accepts BOTH the clean column table (see `DATA-FORMAT.md`) and the
+original two-row text tables from the emails (angle row + strength row per
+lattice line). The layout is auto-detected from the file content.
 
 ## 2. Architecture
 
@@ -60,7 +59,9 @@ field-map/
     types.ts          FieldDataset, VectorSample, options (shared types)
     dataset.ts        statistics, magnitude + transfer functions
     colormaps.ts      colour palettes (viridis/inferno/...) + angle colour
-    parser.ts         text upload -> FieldDataset (cartesian or polar table)
+    parser.ts         text upload -> FieldDataset; column table + format
+                      auto-detection (routes to parseExample1 when needed)
+    parseExample1.ts  the legacy two-row polar grid layout (specs emails)
     renderer.ts       raster colour field + overlay (arrows/grid/axes/charges)
     state.ts          view transform, options, fit/zoom/pan helpers
     app.ts            FieldMapController: DOM, input, render scheduling
@@ -126,12 +127,25 @@ mid-ticks are not drawn (only 0 and max).
 ## 6. Upload & file format
 
 - "Upload file" button opens the file picker; the canvas is a drop target too.
-- Text is parsed by `parser.ts`:
-  - header line optional; polar layout selected when the header contains
+- Text is parsed by `parser.ts`; the dispatcher `parseFieldFileAuto` decides
+  which parser to use based on the content:
+  - **legacy two-row polar grid** (contains `winkel in grad` / `Feldstärke`
+    row markers plus an `x=-10.0 ... Spalte x` header) -> `parseExample1.ts`
+  - **column table** otherwise -> the table parser below
+- Column-table parser (`parseFieldFile`):
+  - header line optional (text-only header like `x y mag deg` selects the
+    polar layout); polar selected when the header contains
     `deg`/`angle`/`winkel`
   - cartesian columns `x y u v`, polar columns `x y mag deg`
   - comments `#` / `;`, blank lines ignored, European comma decimal accepted
   - `-999` = masked point
+- Two-row parser (`parseExample1.ts`):
+  - x positions come from the `x=-10.0 x=-9.5 ...` column header
+  - y positions come from the row trailer `... winkel in grad   Zeile y : 1   y= 10.0`
+  - each horizontal lattice line = an angle row + a magnitude row
+  - `# q1/q2 ... Ladung : pos|neg` and `# q1/q2 auf <x> <y>` comments become
+    charge markers (only those inside the sampled extent are kept)
+  - magnitude `<= -999` (or the `777`/`999` angle sentinels) -> masked
 - Problems in single lines are collected and shown; an empty result prints a
   hint to read `DATA-FORMAT.md`.
 - The demo dataset `demo.ts` reproduces the two negative charges from the spec
@@ -165,8 +179,6 @@ reload. `dist/` is a generated artifact.
 
 ## 10. Next steps / future ideas
 
-- Parse the exact legacy two-row spec layout (angle+strength per row) as an
-  optional import, using the y-label comments
 - Vector-field line integration (field lines through the data)
 - Logarithmic arrow length option
 - Symmetric colour scale around 0 for signed scalars

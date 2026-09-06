@@ -95,6 +95,54 @@ x y mag deg
 The `deg` values come straight from the example files under `specs/`
 (angle of `atan2`, `180/-180` horizontal, `+/-90` vertical).
 
+## Layout 3 - two-row polar grid (original email format)
+
+The original example files (e.g. `example1.txt`, the GMX mails in `specs/`)
+do not use one line per point. They lay the grid out as a table where every
+horizontal line `y` is written as a PAIR of rows:
+
+1. one row of directions in degrees, ending with `winkel in grad`,
+2. the next row of magnitudes, ending with `Feldstärke`.
+
+The x positions of the columns are given once by a header line:
+
+```
+x=-10.0 x=-9.5 x=-9.0 x=-8.5 x=-8.0 x=-7.5 x=-7.0 x=-6.5 x=-6.0 x=-5.5 x=-5.0 x=-4.5 x=-4.0 x=-3.5 x=-3.0 x=-2.5 x=-2.0 x=-1.5 x=-1.0 x=-0.5 x= 0.0  Spalte x
+-------------------------------------------------------------------------------------------------------------------------------------
+   -79    -82    -86    -89    -93    -97   -101   -105   -109 -114   -119   -124   -129   -135   -141   -147   -153   -160 -166   -173    180   winkel in grad     Zeile y :   1    y=  10.0
+  0.006  0.006  0.006  0.006  0.007  0.007  0.007  0.007  0.007 0.007  0.007  0.007  0.007  0.007  0.007  0.007  0.007  0.007 0.007  0.007  0.007   Feldstärke
+   ...
+```
+
+- the y value of each line comes from the row trailer `... y= 10.0`
+- an angle of `777` / `999` or a magnitude of `-999.0` marks a masked point
+  (the charge location) - those points are never drawn
+
+Optional `#` comment lines above the table can name the charges so the app
+draws charge markers:
+
+```
+# q1 Ladung : neg        (or: pos)
+# q1 auf -5 0
+# q2 Ladung : neg
+# q2 auf +5 0
+```
+
+> This layout is auto-detected. If you produce your data yourself, prefer
+> **Layout 1 or 2** (one point per line) - they are simpler and faster.
+
+## Detecting the layout automatically
+
+Upload a file and the app decides by itself:
+
+| File looks like                            | Layout |
+|--------------------------------------------|--------|
+| has `winkel in grad` + `Feldstärke` rows, x header `x=-...` | 3 (two-row grid) |
+| first data line has 4 numbers              | 1 or 2 (column table)  |
+
+When in doubt the column-table parser is used and any skipped lines are
+reported under the upload button.
+
 ## Generating the data
 
 Export your data from a program, e.g. in Python:

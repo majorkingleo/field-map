@@ -1,6 +1,6 @@
 import { FieldMapController } from './app';
 import { demoDataset } from './demo';
-import { parseFieldFile } from './parser';
+import { parseFieldFileAuto } from './parser';
 import { colorAtRGB, COLORMAP_KEYS, isLightTheme, lightenToTheme } from './colormaps';
 import type { FieldType } from './types';
 import './styles.css';
@@ -29,7 +29,7 @@ async function onFile(file: File): Promise<void> {
   const text = await file.text();
   const ftype = (fieldTypeSel.value as FieldType) || 'electric';
   const unit = unitInput.value.trim() || (ftype === 'electric' ? 'V/m' : 'T');
-  const res = parseFieldFile(text, file.name.replace(/\.[^.]+$/, ''), ftype, unit);
+  const res = parseFieldFileAuto(text, file.name.replace(/\.[^.]+$/, ''), ftype, unit);
   controller.loadDataset(res.dataset);
   controller.setOptions({ unit });
   const title = document.getElementById('dataTitle');
