@@ -23,6 +23,8 @@ export interface AppOptions {
   showAxes: boolean;
   showCharges: boolean;
   showArrows: boolean;
+  /** Arrow length multiplier (slider in the View panel). 1 = default. */
+  arrowScale: number;
 }
 
 export interface AppState {
@@ -51,6 +53,7 @@ export function createState(): AppState {
       showAxes: true,
       showCharges: true,
       showArrows: true,
+      arrowScale: 1,
     },
   };
 }

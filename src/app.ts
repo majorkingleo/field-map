@@ -250,6 +250,7 @@ export class FieldMapController {
             charges: opts.showCharges,
             arrows: opts.showArrows,
             arrowEvery: 1,
+            arrowScale: opts.arrowScale,
             colorMode: opts.colorMode,
             colormap: opts.colormap,
             magScale: opts.magScale,

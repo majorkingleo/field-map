@@ -151,6 +151,23 @@ input[type="text"]:focus {
   border-color: var(--accent);
 }
 
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sliderRow input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.sliderVal {
+  font-size: 12px;
+  color: var(--text);
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .btn {
   border: none;
   border-radius: 9px;

@@ -185,6 +185,15 @@ bindCheckbox('optAxes', 'showAxes');
 bindCheckbox('optCharges', 'showCharges');
 bindCheckbox('optArrows', 'showArrows');
 
+// --- arrow size slider ---
+const arrowScaleInput = document.getElementById('arrowScale') as HTMLInputElement;
+const arrowScaleVal = document.getElementById('arrowScaleVal') as HTMLElement;
+arrowScaleInput.addEventListener('input', () => {
+  const v = Number(arrowScaleInput.value) || 1;
+  controller.setOptions({ arrowScale: v });
+  if (arrowScaleVal) arrowScaleVal.textContent = `${v.toFixed(1)}\u00d7`;
+});
+
 (document.getElementById('colorMode') as HTMLSelectElement).addEventListener('change', (e) => {
   const v = (e.target as HTMLSelectElement).value;
   controller.setOptions({ colorMode: v as never });

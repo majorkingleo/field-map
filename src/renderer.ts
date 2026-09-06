@@ -365,6 +365,7 @@ export interface OverlayOptions {
   charges: boolean;
   arrows: boolean;
   arrowEvery: number; // lattice decimation: 1 = all samples
+  arrowScale: number; // length multiplier, 1 = default
   colorMode: ColorMode;
   colormap: ColormapKey;
   magScale: MagScale;
@@ -523,7 +524,8 @@ function drawArrows(
       if (px < -30 || px > W + 30 || py < -30 || py > H + 30) continue;
       const mag = Math.hypot(s.u, s.v);
       const t01 = scaleMag01(mag, maxMag, opts.magScale);
-      const len = 3 + 15 * clamp01(t01);
+      const scale = opts.arrowScale ?? 1;
+      const len = (3 + 15 * clamp01(t01)) * scale;
       const ang = Math.atan2(s.v, s.u);
       const dx = Math.cos(ang) * len;
       const dy = -Math.sin(ang) * len;
@@ -545,7 +547,7 @@ function drawArrows(
       const hx = px + dx;
       const hy = py + dy;
       const dirBack = Math.atan2(-dy, -dx); // pointing back toward tail
-      const ah = 3.4;
+      const ah = 3.4 * Math.max(1, Math.sqrt(scale));
       ctx.beginPath();
       ctx.moveTo(hx, hy);
       ctx.lineTo(
